@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-app
+  namespace: klogstream-demo
+  labels:
+    app: web-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: web-app
+  template:
+    metadata:
+      labels:
+        app: web-app
+    spec:
+      containers:
+      - name: webserver
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: log-generator
+          mountPath: /usr/share/nginx/html/
+      - name: log-generator
+        image: busybox
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          while true; do
+            TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
+            REQUEST_ID=$(echo $RANDOM | md5sum | head -c 8)
+            METHOD=$(echo "GET POST PUT DELETE" | tr ' ' '\n' | shuf -n 1)
+            PATH="/api/$(echo "users orders products auth" | tr ' ' '\n' | shuf -n 1)/$(echo $RANDOM | md5sum | head -c 6)"
+            STATUS=$(echo "200 201 204 400 401 403 500" | tr ' ' '\n' | shuf -n 1)
+            DURATION=$((RANDOM % 1000))
+            
+            echo "$TIMESTAMP [$REQUEST_ID] $METHOD $PATH - $STATUS (${DURATION}ms)"
+            
+            sleep $(awk -v min=0.5 -v max=3 'BEGIN{srand(); print min+rand()*(max-min)}')
+          done
+      volumes:
+      - name: log-generator
+        emptyDir: {}

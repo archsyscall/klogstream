@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: json-logger
+  namespace: klogstream-demo
+  labels:
+    app: json-logger
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: json-logger
+  template:
+    metadata:
+      labels:
+        app: json-logger
+    spec:
+      containers:
+      - name: json-generator
+        image: busybox
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          while true; do
+            TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")
+            LOG_LEVEL=$(echo "INFO DEBUG WARN ERROR" | tr ' ' '\n' | shuf -n 1)
+            
+            # Generate some common service names
+            SERVICE=$(echo "auth-service user-service order-service payment-service notification-service" | tr ' ' '\n' | shuf -n 1)
+            
+            # Generate a trace ID
+            TRACE_ID=$(echo $RANDOM | md5sum | head -c 16)
+            
+            # Generate a message based on log level
+            case $LOG_LEVEL in
+              "INFO")
+                MESSAGE="Successfully processed request"
+                DURATION=$((RANDOM % 100))
+                ;;
+              "DEBUG")
+                MESSAGE="Processing request with parameters"
+                DURATION=$((RANDOM % 200))
+                ;;
+              "WARN")
+                MESSAGE="Slow response detected"
+                DURATION=$((500 + RANDOM % 1000))
+                ;;
+              "ERROR")
+                MESSAGE="Failed to process request"
+                ERROR_CODE=$((400 + RANDOM % 100))
+                DURATION=$((1000 + RANDOM % 2000))
+                ;;
+            esac
+            
+            # Create a JSON log entry
+            JSON="{"
+            JSON="$JSON\"timestamp\":\"$TIMESTAMP\","
+            JSON="$JSON\"level\":\"$LOG_LEVEL\","
+            JSON="$JSON\"service\":\"$SERVICE\","
+            JSON="$JSON\"trace_id\":\"$TRACE_ID\","
+            JSON="$JSON\"message\":\"$MESSAGE\","
+            JSON="$JSON\"duration_ms\":$DURATION"
+            
+            # Add error details for ERROR level
+            if [ "$LOG_LEVEL" = "ERROR" ]; then
+              JSON="$JSON,\"error_code\":$ERROR_CODE,"
+              JSON="$JSON\"error_details\":\"Details about the error\""
+            fi
+            
+            JSON="$JSON}"
+            
+            echo "$JSON"
+            
+            sleep $(awk -v min=0.5 -v max=2 'BEGIN{srand(); print min+rand()*(max-min)}')
+          done

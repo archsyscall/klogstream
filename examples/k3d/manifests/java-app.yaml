@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-app
+  namespace: klogstream-demo
+  labels:
+    app: java-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: java-app
+  template:
+    metadata:
+      labels:
+        app: java-app
+    spec:
+      containers:
+      - name: java-logger
+        image: busybox
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          while true; do
+            # Simulate normal logs
+            echo "$(date +"%Y-%m-%d %H:%M:%S.%3N") INFO  [main] com.example.MyApplication - Application started successfully"
+            sleep $(awk -v min=1 -v max=5 'BEGIN{srand(); print min+rand()*(max-min)}')
+            
+            # Randomly generate stack traces
+            if [ $((RANDOM % 10)) -lt 3 ]; then
+              echo "$(date +"%Y-%m-%d %H:%M:%S.%3N") ERROR [main] com.example.MyApplication - Encountered an exception during processing"
+              echo "java.lang.RuntimeException: Failed to process request"
+              echo "    at com.example.MyApplication.processRequest(MyApplication.java:42)"
+              echo "    at com.example.MyApplication.handleRequest(MyApplication.java:28)"
+              echo "    at com.example.MyApplication.run(MyApplication.java:15)"
+              echo "    at com.example.MyApplication.main(MyApplication.java:10)"
+              echo "Caused by: java.lang.NullPointerException: Null resource found"
+              echo "    at com.example.ResourceHandler.loadResource(ResourceHandler.java:67)"
+              echo "    at com.example.MyApplication.processRequest(MyApplication.java:40)"
+              echo "    ... 3 more"
+            fi
+            
+            sleep $(awk -v min=2 -v max=10 'BEGIN{srand(); print min+rand()*(max-min)}')
+          done

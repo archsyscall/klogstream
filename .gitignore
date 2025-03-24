@@ -1,0 +1,33 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go specific
+*.o
+*.a
+*.test
+*.out
+/vendor/
+/Godeps/
+
+# Kubernetes and k3d temporary files
+kubeconfig*
+.kube/
+
+# Binaries for programs and plugins
+main
+k3d-example
+__debug_bin*
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Log files
+*.log
