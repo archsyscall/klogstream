@@ -16,7 +16,7 @@
 ## Installation
 
 ```bash
-go get github.com/archsyscall/klogstream
+go get github.com/archsyscall/klogstream/pkg/klogstream
 ```
 
 ## Log Handler Interface
